@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+
+# Flask
+instance/
+uploads/
+*.db
+*.sqlite3
+
+# VSCode or PyCharm
+.vscode/
+.idea/
+
+# macOS and Linux
+.DS_Store
+*.swp
+
+# React / Node.js frontend
+node_modules/
+build/
+dist/
+.env.local
+.env.development
+.env.production
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Logs
+*.log
+
+# System
+Thumbs.db
