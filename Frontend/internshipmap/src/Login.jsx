@@ -12,10 +12,11 @@ function Login({ onLogin }){
     const handleLogin = async() => {
         try {
             const response = await axios.post('http://localhost:5001/login', {email, password});
-            setStatus("Login Successful");
-            onLogin(response.data);
+            
+            // onLogin(response.data);
             localStorage.setItem('token', response.data.token);
-            navigate('/dashboard')
+            setStatus("Login Successful");
+            navigate('/dashboard');
         } catch (error){
             setStatus("Login failed: " + err.response?.data?.error || err.message);
         }

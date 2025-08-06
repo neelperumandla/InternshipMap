@@ -1,5 +1,5 @@
 import base64
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from pymongo import MongoClient
 from datetime import datetime, timedelta
@@ -9,6 +9,8 @@ import os
 
 app = Flask(__name__)
 CORS(app)
+app.config['SECRET_KEY'] = 'secret-key'
+# app.secret_key = "secret-key"
 SECRET_KEY = os.getenv("JWT_SECRET", "secret-key")
 
 client = MongoClient("mongodb://localhost:27017")
@@ -17,7 +19,6 @@ collection = db['users']
 
 @app.route('/signup', methods=['POST'])
 def signup():
-    print("I am here")
     data = request.get_json()
     email = data['email']
     password = data['password']
@@ -45,6 +46,8 @@ def login():
     if not user or not bcrypt.checkpw(data['password'].encode(), stored_hashed_pw):
         return jsonify({"error" : "Invalid credentials"}), 401
     
+    session['email'] = user['email']
+    print(session['email'] + " " + session.get('email'))
     token = jwt.encode({
         'email' : user['email'],
         'exp' : datetime.now() + timedelta(hours=24)

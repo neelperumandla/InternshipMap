@@ -1,10 +1,13 @@
 import { useState } from "react";
 import axios from 'axios';
+import JobMatch from "./JobMatch";
+import { Navigate, useNavigate } from "react-router-dom";
 
 function ResumeUpload() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploadStatus, setUploadStatus] = useState('');
     const [parsedData, setParsedData] = useState(null);
+    const navigate = useNavigate();
 
 
     const handFileSelection = (event) => {
@@ -30,6 +33,10 @@ function ResumeUpload() {
         } catch (error) {
             setUploadStatus(`Upload failed: ${error.message}`);
         }
+    };
+
+    const handleFindJobs = () => {
+        navigate('/find-jobs')
     };
 
     return (
@@ -73,7 +80,10 @@ function ResumeUpload() {
                             )}
                         </div>
                     ))}
-                </div>: 
+                    <br/><br/>
+                    <button onClick={handleFindJobs}>Find Jobs</button>
+                </div>
+                : 
                     <p>No Resume Uploaded Yet</p>}
             </div>
         </>

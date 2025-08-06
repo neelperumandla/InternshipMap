@@ -34,6 +34,10 @@ function Register() {
         }
     };
 
+    const handleLogin = () => {
+        navigate('/login');
+    };
+
     return (
         <>
         <div className="card" style={{borderRadius: 20}}>
@@ -52,7 +56,9 @@ function Register() {
             /><br />
             <button onClick={handleRegister}>Sign Up</button>
             {status && <p>{status}</p>}
-            <br/><br/>
+            <br/>
+            <br/>
+            <button onClick={handleLogin}>Already Logged In?</button>
             
         </div>
         </>

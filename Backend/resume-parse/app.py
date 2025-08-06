@@ -66,10 +66,12 @@ def upload_resume():
             raise ValueError("Gemini response was not a dictionary")
 
         user = collection.find_one({'email' : user_email})
+        parsed['email'] = user_email
         if(user):
+            
             collection.update_one({'email' : user_email}, {'$set' : parsed})
         else:  
-            parsed['email'] = user_email
+            # parsed['email'] = user_email
             collection.insert_one(parsed)
         return jsonify({"email" : parsed['email'],
                         "skills" : parsed['skills'],
