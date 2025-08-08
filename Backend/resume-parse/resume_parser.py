@@ -6,32 +6,45 @@ import json
 from dotenv import load_dotenv
 import os
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader
 from langchain_google_genai import GoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_core.output_parsers import StrOutputParser
+from langchain.vectorstores import Chroma
 import chromadb
 
 load_dotenv()
 
-llm = GoogleGenerativeAI("gemini-2.0-flash")
-embedding = GoogleGenerativeAIEmbeddings(model='models/embedding-001')
-chroma_client = chromadb.Client()
-collection = chroma_client.get_or_create_collection("resumes")
+llm = GoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
+embedding = OllamaEmbeddings(model='llama3')
+CHROMA_DIR = "database/chroma"
+if os.path.exists(CHROMA_DIR):
+    vectorstore = Chroma(persist_directory=CHROMA_DIR, embedding_function=embedding)
+else:
+    vectorstore = Chroma(persist_directory=CHROMA_DIR, embedding_function=embedding)
+retriever = vectorstore.as_retriever()
+
+# chroma_client = chromadb.Client()
+# collection = chroma_client.get_or_create_collection("resumes")
 # client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 # chat = client.chats.create(model="gemini-2.0-flash")
 
 def extract_pdf(file_path):
+    loader = PyPDFLoader(file_path)
+    pages = loader.load_and_split()
     text = ""
-    with pdfplumber.open(file_path) as pdf:
-        for page in pdf.pages:
-            content = page.extract_text()
-            if content:
-                text += content + "\n"
+    
+    for page in pages:
+        content = page.page_content
+        if content:
+            text += content + "\n"
         
     return text
 
 def extract_docx(file_path):
-    doc = Document(file_path)
-    return "\n".join([para.text for para in doc.paragraphs])
+    loader = Docx2txtLoader(file_path)
+    documents = loader.load_and_split()
+    return "\n".join([para.page_content for para in documents])
 
 def parse_resume(file_path, user_email):
     if file_path.endswith(".pdf"):
@@ -75,7 +88,7 @@ def parse_resume(file_path, user_email):
     
     parse_chain = parse_prompt_template | llm | StrOutputParser()
     response = parse_chain.invoke({'resume' : text})
-    vector = embedding.embed_query(text)
+    
     
     
         
@@ -97,17 +110,20 @@ def parse_resume(file_path, user_email):
         # Parse the JSON
         data = json.loads(cleaned)
         
-        collection.add(
-            documents=[text],
-            embedding=[vector],
-            ids=[user_email],
-            metadatas=[{
-                'email': email,
-                'skills': data.get("skills", []),
-                "projects": data.get("projects", []),
-                "experience": data.get("experience", [])
-            }]
+        email_address = email.group() if email else user_email
+    
+        metadata = {
+            "email" : email_address,
+            'skills': data.get("skills", []),
+            "projects": data.get("projects", []),
+            "experience": data.get("experience", [])
+        }
+        vectorstore.add_texts(
+            texts=[text],
+            metadatas=[metadata],
+            ids=[email_address]
         )
+        
 
         return {
             "email": email.group() if email else None,
