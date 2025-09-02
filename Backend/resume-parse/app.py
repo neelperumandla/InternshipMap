@@ -56,7 +56,7 @@ def upload_resume():
     resume.save(filepath)
     
     try:
-        parsed = parse_resume(filepath)
+        parsed = parse_resume(filepath, user_email)
         os.remove(filepath)
 
         # Debug print what we got back from Gemini
@@ -66,14 +66,14 @@ def upload_resume():
             raise ValueError("Gemini response was not a dictionary")
 
         user = collection.find_one({'email' : user_email})
-        parsed['email'] = user_email
+        # parsed['email'] = user_email
         if(user):
             
             collection.update_one({'email' : user_email}, {'$set' : parsed})
         else:  
             # parsed['email'] = user_email
             collection.insert_one(parsed)
-        return jsonify({"email" : parsed['email'],
+        return jsonify({"email" : user_email,
                         "skills" : parsed['skills'],
                         "experience" : parsed['experience'],
                         "projects" : parsed['projects']})

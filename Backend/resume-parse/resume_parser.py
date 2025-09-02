@@ -16,13 +16,13 @@ import chromadb
 load_dotenv()
 
 llm = GoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
-embedding = OllamaEmbeddings(model='llama3')
-CHROMA_DIR = "database/chroma"
-if os.path.exists(CHROMA_DIR):
-    vectorstore = Chroma(persist_directory=CHROMA_DIR, embedding_function=embedding)
-else:
-    vectorstore = Chroma(persist_directory=CHROMA_DIR, embedding_function=embedding)
-retriever = vectorstore.as_retriever()
+# embedding = OllamaEmbeddings(model='llama3')
+# CHROMA_DIR = "database/chroma"
+# if os.path.exists(CHROMA_DIR):
+#     vectorstore = Chroma(persist_directory=CHROMA_DIR, embedding_function=embedding)
+# else:
+#     vectorstore = Chroma(persist_directory=CHROMA_DIR, embedding_function=embedding)
+# retriever = vectorstore.as_retriever()
 
 # chroma_client = chromadb.Client()
 # collection = chroma_client.get_or_create_collection("resumes")
@@ -54,36 +54,36 @@ def parse_resume(file_path, user_email):
     else:
         return {"error": "Unsupported file type"}
 
-    email = re.search(r'\b[\w\.-]+@[\w\.-]+\.\w{2,4}\b', text)
+    # email = re.search(r'\b[\w\.-]+@[\w\.-]+\.\w{2,4}\b', text)
 
-    parse_prompt_template = ChatPromptTemplate(
-        """You are given this resume:
-        {resume}
-        Extract structured information from the resume.
-        Respond with ONLY a valid JSON object in this format:
+    parse_prompt_template = ChatPromptTemplate.from_template(
+    """You are given this resume:
+    {resume}
+    Extract structured information from the resume.
+    Respond with ONLY a valid JSON object in this format:
 
+    {{
+      "skills": ["list of technologies"],
+      "projects": [
         {{
-          "skills": ["list of technologies"],
-          "projects": [
-            {{
-              "name": "Project Name",
-              "summary": "1-2 sentence description",
-              "technologies": ["list of tools"]
-            }}
-          ],
-          "experience": [
-            {{
-              "company": "Company Name",
-              "title": "Job Title",
-              "summary": "1-2 sentence summary",
-              "technologies": ["list of tools"]
-            }}
-          ]
+          "name": "Project Name",
+          "summary": "1-2 sentence description",
+          "technologies": ["list of tools"]
         }}
+      ],
+      "experience": [
+        {{
+          "company": "Company Name",
+          "title": "Job Title",
+          "summary": "1-2 sentence summary",
+          "technologies": ["list of tools"]
+        }}
+      ]
+    }}
 
-        Do NOT wrap in quotes or explain anything.
-        """
-    )
+    Do NOT wrap in quotes or explain anything.
+    """
+)
     
     
     parse_chain = parse_prompt_template | llm | StrOutputParser()
@@ -105,28 +105,28 @@ def parse_resume(file_path, user_email):
         cleaned = cleaned.strip()
 
         # Print debug log
-        print("Gemini response:\n", cleaned)
+        # print("Gemini response:\n", cleaned)
 
         # Parse the JSON
         data = json.loads(cleaned)
         
-        email_address = email.group() if email else user_email
+        email_address = user_email
     
-        metadata = {
-            "email" : email_address,
-            'skills': data.get("skills", []),
-            "projects": data.get("projects", []),
-            "experience": data.get("experience", [])
-        }
-        vectorstore.add_texts(
-            texts=[text],
-            metadatas=[metadata],
-            ids=[email_address]
-        )
+        # metadata = {
+        #     "email" : email_address,
+        #     'skills': data.get("skills", []),
+        #     "projects": data.get("projects", []),
+        #     "experience": data.get("experience", [])
+        # }
+        # vectorstore.add_texts(
+        #     texts=[text],
+        #     metadatas=[metadata],
+        #     ids=[email_address]
+        # )
         
-
+        print(data.get("skills",[]))
         return {
-            "email": email.group() if email else None,
+            "email": email_address,
             "skills": data.get("skills", []),
             "experience": data.get("experience", []),
             "projects": data.get("projects", [])
